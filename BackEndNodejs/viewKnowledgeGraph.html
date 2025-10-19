@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>KG Viewer</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 0; }
+    #top { padding: 10px; background:#f6f6f6; display:flex; gap:8px; align-items:center; }
+    #json { width: 50vw; height: 16rem; font-family: ui-monospace, monospace; }
+    #net { width: 100vw; height: calc(100vh - 200px); border-top:1px solid #ddd; }
+    button { padding:8px 12px; }
+  </style>
+</head>
+<body>
+  <div id="top">
+    <textarea id="json" placeholder='Paste {"nodes":[...],"edges":[...]} here'></textarea>
+    <div>
+      <button id="renderBtn">Render</button>
+      <div style="margin-top:6px;font-size:12px;color:#666">
+        Or use <code>?dataUrl=...</code> to fetch JSON (supports <code>&mode=all</code>).
+      </div>
+    </div>
+  </div>
+  <div id="net"></div>
+
+  <script>
+    const nodeColors = {
+      Person:'#81b29a', Place:'#3d5a80', Event:'#f2cc8f',
+      Food:'#e07a5f', Artist:'#98c1d9', Song:'#e0fbfc', Theme:'#b8bedd'
+    };
+    const netEl = document.getElementById('net');
+    let network;
+
+    // Always fetch fresh JSON by appending a timestamp
+    async function loadFromParam() {
+      const url = new URL(location.href);
+      const dataUrl = url.searchParams.get('dataUrl');
+      if (!dataUrl) return null;
+      try {
+        const bust = dataUrl.includes('?') ? '&' : '?';
+        const res = await fetch(`${dataUrl}${bust}t=${Date.now()}`);
+        return await res.json();
+      } catch (e) { console.error(e); return null; }
+    }
+
+    // Build map: nodeId -> role (e.g., "son") for family edges from User
+    function buildRoleMap(edges, nodeById, userLabel = "User") {
+      const map = {};
+      for (const e of edges) {
+        if (e.type !== "is_family_of") continue;
+        const role = e.props && e.props.role;
+        if (!role) continue;
+
+        const fromLabel = nodeById[e.from]?.label || "";
+        // If the edge is User -> Person and has a role, annotate the 'to' node with that role
+        if (fromLabel.toLowerCase() === userLabel.toLowerCase() && e.to) {
+          map[e.to] = role;
+        }
+      }
+      return map;
+    }
+
+    function renderGraph(data) {
+      if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+        alert('Invalid JSON. Expecting {"nodes":[...], "edges":[...]}'); return;
+      }
+
+      // Build a quick lookup for node labels by id
+      const nodeById = {};
+      for (const n of data.nodes) nodeById[n.id] = n;
+
+      // Compute role annotations for nodes (son/daughter/pet…)
+      const roleByNodeId = buildRoleMap(data.edges, nodeById, "User");
+
+      // Nodes: append role subtitle for person nodes that have one
+      const nodes = new vis.DataSet(
+        data.nodes.map(n => {
+          const role = roleByNodeId[n.id];
+          const label = role && n.type === "Person"
+            ? `${n.label}\n(${role})`
+            : `${n.label}\n(${n.type})`;
+          return {
+            id: n.id,
+            label,
+            color: nodeColors[n.type] || '#ccd5ae',
+            shape: 'box',
+            margin: 8
+          };
+        })
+      );
+
+      // Edges: prefer server-provided label; else compose with props.role
+      const edges = new vis.DataSet(
+        data.edges.map((e, i) => ({
+          id: e.id || `edge_${i}`,
+          from: e.from,
+          to: e.to,
+          arrows: 'to',
+          label: e.label || (e.props && e.props.role ? `${e.type} (${e.props.role})` : e.type),
+          font: { size: 10 }
+        }))
+      );
+
+      const options = {
+        physics: { stabilization: true, barnesHut: { gravitationalConstant: -2500 } },
+        edges: { smooth: true },
+        interaction: { hover: true, tooltipDelay: 100 }
+      };
+      if (network) network.destroy();
+      network = new vis.Network(netEl, { nodes, edges }, options);
+    }
+
+    // Manual JSON paste button
+    document.getElementById('renderBtn').onclick = () => {
+      const txt = document.getElementById('json').value.trim();
+      try { renderGraph(JSON.parse(txt)); } catch (e) { alert('Parse error: ' + e.message); }
+    };
+
+    // Auto-load from ?dataUrl=...
+    (async () => {
+      const preload = await loadFromParam();
+      if (preload) {
+        renderGraph(preload);
+        document.getElementById('json').value = JSON.stringify(preload, null, 2);
+      } else {
+        // Example you can overwrite by clicking "Render"
+        const example = {
+          "nodes":[
+            { "id":"abc123","label":"User","type":"Person" },
+            { "id":"xyz456","label":"Jayden","type":"Person" },
+            { "id":"f1","label":"sushi","type":"Food" }
+          ],
+          "edges":[
+            { "id":"e1","type":"is_family_of","from":"abc123","to":"xyz456","props":{"role":"son"} },
+            { "id":"e2","type":"enjoys","from":"xyz456","to":"f1" }
+          ]
+        };
+        document.getElementById('json').value = JSON.stringify(example, null, 2);
+      }
+    })();
+  </script>
+</body>
+</html>
