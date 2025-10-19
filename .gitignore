@@ -1,0 +1,80 @@
+# ============================================================
+# ✅ KEEP ONLY CODE FILES (.cs, .shader, .unity, .json, etc.)
+# ============================================================
+
+# Ignore everything by default
+*
+
+# --- Include (whitelist) code-related files anywhere ---
+!*.cs
+!*.shader
+!*.cginc
+!*.hlsl
+!*.compute
+!*.unity
+!*.json
+!*.mat
+!*.meta
+
+# ============================================================
+# 🧱 UNITY PROJECT STRUCTURE
+# ============================================================
+
+# --- Keep Unity scripts and scenes anywhere in Assets ---
+!HCFE/Assets/**/*.cs
+!HCFE/Assets/*.cs
+!HCFE/Assets/**/*.shader
+!HCFE/Assets/**/*.json
+!HCFE/Assets/**/*.meta
+!HCFE/Assets/**/*.unity
+!HCFE/Assets/**/*.mat
+
+# --- Ignore Unity-generated and heavy folders ---
+HCFE/Library/
+HCFE/Temp/
+HCFE/Obj/
+HCFE/Build*/
+HCFE/Logs/
+HCFE/UserSettings/
+HCFE/MemoryCaptures/
+HCFE/Packages/com.unity.collab-proxy/
+HCFE/Assets/**
+
+# --- Re-allow the code files again (important: must come *after* the ignore) ---
+!HCFE/Assets/**/*.cs
+!HCFE/Assets/*.cs
+!HCFE/Assets/**/*.shader
+!HCFE/Assets/**/*.json
+!HCFE/Assets/**/*.meta
+!HCFE/Assets/**/*.unity
+!HCFE/Assets/**/*.mat
+
+# ============================================================
+# 💻 NODE / REACT FRONTEND & BACKEND
+# ============================================================
+
+# Node.js and React builds
+node_modules/
+build/
+dist/
+.env
+.env.*.local
+
+# Keep frontend/backend source code
+!rpm-backend/**
+!rpm-frontend/**
+!*.js
+!*.ts
+!*.json
+!*.config
+!*.env
+
+# ============================================================
+# 🧹 SYSTEM / EDITOR JUNK
+# ============================================================
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
