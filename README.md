@@ -2,7 +2,7 @@
 A Virtual Reality game integrated with LLM companion for elderly users.
 
 ## Features:
-This code base only contains the coding script for important features. The packages and assets from Unity are not stored here. 
+This code base only contains the coding script for important features. The packages, scenes and assets from Unity are not stored here. 
 
 ### LLM interaction with the elderly user
 The script is in /Unity/AvatarLoadingExample.cs
